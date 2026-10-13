@@ -1,0 +1,25 @@
+{
+  "source_revision": "76e395fe344d5c6645a0e0d1da2368511623313b",
+  "source_path": "WORKLOG.md",
+  "archive_path": "WORKLOG-2026-10-13.md",
+  "bytes": 28802,
+  "sha256": "4ea35ec5fc0ef9b6caac2fa3864ad2bb3f9becfd7192e8e2a987105b1193f7b5",
+  "git_blob": "3646b17db288a11fe5397b2b593a0696443e634c",
+  "preservation": "Exact bytes; original root-relative link context retained.",
+  "forwarded_anchors": [
+    "worklog",
+    "2026-10-07---github-issue-review-closeout",
+    "2026-10-07---readme-refresh-closeout",
+    "open-items",
+    "2026-09-22---released-108-hosted-default-business-survives-restarts-bare-uuids-accepted",
+    "2026-09-02---released-107-for-the-accountsubtypearchivable-null-schema-coverage-audit",
+    "2026-08-27---released-105-and-106-fixed-the-version-hook-and-a-node-18-crash",
+    "2026-08-26---reviewed-and-repaired-the-103-observability-work-response-cache-removed",
+    "2026-08-26---deferred-items-cleared-worker-stack-upgraded-structured-output-delete-hardening",
+    "2026-08-25---improvement-pass-security-bumps-api-doc-accuracy-honest-pagination",
+    "2026-08-25---comprehensive-bug-fixing-pass-five-defects-four-in-the-shared-server",
+    "earlier-history-before-2026-08-23",
+    "2026-09-24---mcp-sdk-v2-compatibility-migration-issue-3"
+  ],
+  "removed_generated_files": []
+}
