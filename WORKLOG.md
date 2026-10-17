@@ -5,9 +5,9 @@
 - [README](README.md) covers installation, tool behavior, configuration and local builds.
 - [Worker guide](worker/README.md) covers hosted setup, verification, connection defaults and the legacy transport retirement gates. The [hosted connector overview](docs/hosted-oauth-connector.md) explains the public routes and consent flow.
 - [Contributing](CONTRIBUTING.md) covers development; [release reporting](.github/RELEASES.md) covers verified delivery and reporting recovery.
-- [GitHub issues](https://github.com/oliverames/wave-mcp-server/issues) track unfinished client transition, dependency override removal and patched release delivery.
+- [GitHub issues](https://github.com/oliverames/wave-mcp-server/issues) track the unfinished client transition and the remaining Worker dependency overrides.
 
-The legacy MCP and SSE routes remain supported until the receiving-client and session-drain conditions in the Worker guide are met. Keep the temporary security overrides until compatible upstream dependencies replace them. Published artifacts and deployed Workers require their own evidence; an old source or worklog entry is not a fresh delivery receipt.
+The legacy MCP and SSE routes remain supported until the receiving-client and session-drain conditions in the Worker guide are met. The Worker keeps only the `miniflare` `sharp` and `undici` overrides in `worker/package.json`: every stable Miniflare 4 release still pins affected versions, and only Miniflare 5 alpha and beta builds resolve patched ones. The `@modelcontextprotocol/sdk` and `client` overrides were removed when Agents 0.28.1 began peering SDK 1.32.1 and client and server 2.3.1. Published artifacts and deployed Workers require their own evidence; an old source or worklog entry is not a fresh delivery receipt.
 
 ## October 13, 2026: documentation cleanup
 
