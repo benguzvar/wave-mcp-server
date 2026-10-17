@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-10-17
+
+### Security
+
+- Patched vulnerable dependencies (b6243f6). The MCP SDK floor is now
+  `^1.31.0`, which fixes the OAuth credential binding advisory
+  ([GHSA-6qxp-vccf-f47h](https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h)),
+  and the lockfile resolves patched versions of the HTTP and parsing
+  libraries the SDK pulls in. Full audits of the package and the hosted Worker
+  report no vulnerabilities. ([#7])
+
+### Added
+
+- Source for the hosted connector's SDK v2 transport (modern `/mcp` requests,
+  connection-scoped default business). The npm package and desktop bundle are
+  unchanged by it. ([#3])
+
+[#3]: https://github.com/oliverames/wave-mcp-server/issues/3
+[#7]: https://github.com/oliverames/wave-mcp-server/issues/7
+
 ## [1.0.8] - 2026-09-22
 
 ### Fixed
