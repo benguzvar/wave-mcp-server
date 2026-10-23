@@ -32,7 +32,6 @@ function exportedAsset(name, buffer) {
 }
 
 try {
-  const source = await readFile(sourcePath);
   const generated = [];
 
   for (const variant of variants) {
@@ -93,7 +92,6 @@ try {
     "  return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));",
     "}",
     "",
-    exportedAsset("CONNECTOR_ICON_PNG", source),
     ...generated.map(({ name, buffer }) => exportedAsset(name, buffer)),
   ].join("\n");
 

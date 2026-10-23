@@ -3,8 +3,6 @@
 import {
   CONNECTOR_FAVICON_256_PNG,
   CONNECTOR_FAVICON_256_PNG_SHA256,
-  CONNECTOR_ICON_PNG,
-  CONNECTOR_ICON_PNG_SHA256,
 } from "./connector-icon-assets.js";
 
 export * from "./connector-icon-assets.js";
@@ -23,7 +21,6 @@ export const REMOTE_SERVER_INFO = {
 };
 
 export { CONNECTOR_FAVICON_256_PNG, CONNECTOR_FAVICON_256_PNG_SHA256 };
-export { CONNECTOR_ICON_PNG, CONNECTOR_ICON_PNG_SHA256 };
 
 export const CONNECTOR_RESOURCE_METADATA = {
   // Pinning grants and token audiences to this exact URL is what
