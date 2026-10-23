@@ -9,6 +9,10 @@
 
 The legacy MCP and SSE routes remain supported until the receiving-client and session-drain conditions in the Worker guide are met. The Worker keeps only the `miniflare` `sharp` and `undici` overrides in `worker/package.json`: every stable Miniflare 4 release still pins affected versions, and only Miniflare 5 alpha and beta builds resolve patched ones. The `@modelcontextprotocol/sdk` and `client` overrides were removed when Agents 0.28.1 began peering SDK 1.32.1 and client and server 2.3.1. Published artifacts and deployed Workers require their own evidence; an old source or worklog entry is not a fresh delivery receipt.
 
+## October 23, 2026: security lockfile refresh and Worker redeploy
+
+`2c03787` moved the server to `@modelcontextprotocol/sdk` 1.32.1, clearing the SDK session-binding, cross-origin redirect and request-size advisories, and both packages to `ip-address` 10.7.4. Root tests 74/74, Worker tests and the bundle dry run passed, and CI passed. Worker version `a93078ae-0ad0-448f-bc7b-f2f5836b48af` is deployed at 100% from `2c03787` and replaced `784d0870-03d9-4a24-98ec-51bc06c829e7`. Unauthenticated checks of `/health`, `/`, `/mcp`, `Origin` handling, `/authorize` and the OAuth metadata matched the pre-deploy baseline, and a tail showed every request `ok` with no exceptions. No signed-in tool call or Wave operation ran; if a reconnected client misbehaves, roll back to `784d0870`.
+
 ## October 13, 2026: documentation cleanup
 
 Moved the full previous worklog into the dated archive below and replaced repeated setup, status and release discussion with links to the maintained guides. Application code, transport routes and dependency settings are unchanged. No package publication, Worker deployment or Wave operation ran for this cleanup.
