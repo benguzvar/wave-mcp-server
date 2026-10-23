@@ -9,6 +9,9 @@ export function applyTransportSecurityHeaders(request, response) {
   headers.set("Strict-Transport-Security", HSTS_VALUE);
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "no-referrer");
+  // No page here is meant to be framed. A framed consent page would let
+  // another site steer the approving click (clickjacking).
+  headers.set("X-Frame-Options", "DENY");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

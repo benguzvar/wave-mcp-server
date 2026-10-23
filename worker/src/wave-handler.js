@@ -51,6 +51,19 @@ import { layout, landingPage, consentPage, privacyPage, deletePage, messagePage 
 
 const app = new Hono();
 
+// Binds one authorization to the browser that saw the consent screen. Open
+// client registration means anyone can start a flow for their own client;
+// without this, a Wave sign-in link for that flow, opened by the owner, would
+// complete it and hand the attacker's client a grant.
+const BROWSER_COOKIE = "__Host-wave_oauth";
+const BROWSER_COOKIE_MAX_AGE_SECONDS = 600;
+
+function readCookie(c, name) {
+  const header = c.req.header("Cookie") ?? "";
+  const match = header.split(/;\s*/).find((part) => part.startsWith(`${name}=`));
+  return match ? match.slice(name.length + 1) : "";
+}
+
 function iconAsset(c, body, contentType, sha256, cacheControl = "public, max-age=31536000, immutable") {
   const etag = `"sha256-${sha256}"`;
   const headers = {
@@ -146,11 +159,18 @@ app.get("/authorize", async (c) => {
       400
     );
   }
-  // Sign the request so the POST cannot be forged or tampered with between
-  // the two steps. base64url over UTF-8 bytes rather than btoa, which throws
-  // on any non-Latin1 character a client id or redirect could carry.
+  // Sign the request, together with a nonce held in this browser's cookie, so
+  // the POST cannot be forged, tampered with, or submitted from another
+  // browser or a cross-site page. base64url over UTF-8 bytes rather than
+  // btoa, which throws on any non-Latin1 character a client id or redirect
+  // could carry.
   const payload = base64url(new TextEncoder().encode(JSON.stringify(oauthRequest)));
-  const signature = await hmacSign(c.env.COOKIE_ENCRYPTION_KEY, payload);
+  const browserNonce = randomToken(24);
+  const signature = await hmacSign(c.env.COOKIE_ENCRYPTION_KEY, `${payload}.${browserNonce}`);
+  c.header(
+    "Set-Cookie",
+    `${BROWSER_COOKIE}=${browserNonce}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${BROWSER_COOKIE_MAX_AGE_SECONDS}`
+  );
 
   return c.html(
     layout(
@@ -169,14 +189,15 @@ app.post("/authorize", async (c) => {
   const payload = String(form.get("payload") ?? "");
   const signature = String(form.get("signature") ?? "");
   const allowWrites = form.get("allow_writes") === "1";
+  const browserNonce = readCookie(c, BROWSER_COOKIE);
 
-  if (!(await hmacVerify(c.env.COOKIE_ENCRYPTION_KEY, payload, signature))) {
+  if (!browserNonce || !(await hmacVerify(c.env.COOKIE_ENCRYPTION_KEY, `${payload}.${browserNonce}`, signature))) {
     return c.html(layout("Invalid request", messagePage("Invalid request", "This consent form could not be verified. Start again from your MCP client.")), 400);
   }
 
   const oauthRequest = JSON.parse(new TextDecoder().decode(base64urlDecode(payload)));
   const stateId = randomToken(24);
-  await putState(c.env, stateId, { oauthRequest, writesEnabled: allowWrites });
+  await putState(c.env, stateId, { oauthRequest, writesEnabled: allowWrites, browserNonce });
 
   const redirectUri = `${c.env.CONNECTOR_BASE_URL}/callback`;
   return c.redirect(
@@ -206,6 +227,14 @@ app.get("/callback", async (c) => {
   if (!stored) {
     return c.html(
       layout("Expired", messagePage("This link expired", "Authorization links are single-use and expire after ten minutes. Start again from your MCP client.")),
+      400
+    );
+  }
+  // The state is consumed either way, so a sign-in link that reached another
+  // browser is spent without exchanging its code or creating a grant.
+  if (!stored.browserNonce || stored.browserNonce !== readCookie(c, BROWSER_COOKIE)) {
+    return c.html(
+      layout("Invalid callback", messagePage("Invalid callback", "This sign-in did not start in this browser. Start again from your MCP client.")),
       400
     );
   }

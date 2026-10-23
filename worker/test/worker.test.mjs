@@ -168,6 +168,7 @@ test("HTTPS responses carry HSTS and sniffing protections", () => {
   assert.equal(response.headers.get("Strict-Transport-Security"), "max-age=31536000");
   assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
   assert.equal(response.headers.get("Referrer-Policy"), "no-referrer");
+  assert.equal(response.headers.get("X-Frame-Options"), "DENY");
 });
 
 test("HSTS is not scoped to subdomains this connector does not control", () => {
@@ -420,6 +421,109 @@ test("an authorize request with no client id gets the same 400 page", async () =
   };
   const response = await WaveHandler.fetch(new Request("https://wave.amesvt.com/authorize"), providerEnv);
   assert.equal(response.status, 400);
+});
+
+// --- Browser binding --------------------------------------------------------
+
+function stateEnv(records = new Map()) {
+  return {
+    ...env,
+    WAVE_CLIENT_ID: "wave-client",
+    OAUTH_PROVIDER: {
+      parseAuthRequest: async () => ({ clientId: "attacker-client", scope: ["read"] }),
+      lookupClient: async () => ({ clientId: "attacker-client", clientName: "Attacker" }),
+    },
+    OAUTH_STATE: {
+      idFromName: (name) => name,
+      get: (name) => ({
+        fetch: async (url, init = {}) => {
+          if (init.method === "PUT") {
+            records.set(name, JSON.parse(init.body));
+            return new Response(null, { status: 204 });
+          }
+          if (init.method === "DELETE" && records.has(name)) {
+            const value = records.get(name);
+            records.delete(name);
+            return Response.json(value);
+          }
+          return new Response(null, { status: 404 });
+        },
+      }),
+    },
+  };
+}
+
+async function consentForm(testEnv) {
+  const response = await WaveHandler.fetch(new Request("https://wave.amesvt.com/authorize"), testEnv);
+  const cookie = response.headers.get("Set-Cookie");
+  const html = await response.text();
+  const field = (name) => html.match(new RegExp(`name="${name}" value="([^"]+)"`))[1];
+  return { cookie, nonce: cookie.match(/^__Host-wave_oauth=([^;]+)/)[1], payload: field("payload"), signature: field("signature") };
+}
+
+function postConsent(testEnv, { payload, signature }, cookieHeader) {
+  return WaveHandler.fetch(
+    new Request("https://wave.amesvt.com/authorize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+      },
+      body: new URLSearchParams({ payload, signature, allow_writes: "1" }),
+    }),
+    testEnv
+  );
+}
+
+test("the consent screen sets a short-lived __Host- browser cookie", async () => {
+  const { cookie } = await consentForm(stateEnv());
+  assert.match(cookie, /^__Host-wave_oauth=[A-Za-z0-9_-]{32}; HttpOnly; Secure; Path=\/; SameSite=Lax; Max-Age=600$/);
+});
+
+test("a consent posted without the consenting browser's cookie stores no state", async () => {
+  const records = new Map();
+  const testEnv = stateEnv(records);
+  const form = await consentForm(testEnv);
+  for (const cookieHeader of [null, "__Host-wave_oauth=another-browser"]) {
+    const response = await postConsent(testEnv, form, cookieHeader);
+    assert.equal(response.status, 400);
+  }
+  assert.equal(records.size, 0);
+});
+
+test("a consent posted from the consenting browser continues to Wave", async () => {
+  const records = new Map();
+  const testEnv = stateEnv(records);
+  const form = await consentForm(testEnv);
+  const response = await postConsent(testEnv, form, `__Host-wave_oauth=${form.nonce}`);
+  assert.equal(response.status, 302);
+  assert.ok(response.headers.get("Location").startsWith("https://api.waveapps.com/oauth2/authorize/"));
+  assert.equal(records.size, 1);
+  assert.equal([...records.values()][0].browserNonce, form.nonce);
+});
+
+test("a callback in another browser spends the state without exchanging the code", async () => {
+  const originalFetch = globalThis.fetch;
+  let upstreamCalls = 0;
+  globalThis.fetch = async () => {
+    upstreamCalls += 1;
+    throw new Error("no upstream request expected");
+  };
+  try {
+    for (const headers of [{}, { Cookie: "__Host-wave_oauth=victim-browser" }]) {
+      const records = new Map([["state-1", { oauthRequest: { clientId: "attacker-client" }, writesEnabled: true, browserNonce: "consenting-browser" }]]);
+      const response = await WaveHandler.fetch(
+        new Request("https://wave.amesvt.com/callback?code=wave-code&state=state-1", { headers }),
+        stateEnv(records)
+      );
+      assert.equal(response.status, 400);
+      assert.match(await response.text(), /did not start in this browser/);
+      assert.equal(records.size, 0, "the state survived a mismatched callback");
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(upstreamCalls, 0);
 });
 
 // --- Scope names and per-connection token records ----------------------------

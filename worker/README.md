@@ -124,6 +124,12 @@ npm test
   be posted to a host that is not Wave.
 - **Every rendered value is escaped.** A hostile client name cannot inject
   markup into the consent screen.
+- **Each authorization is bound to one browser.** The consent screen sets a
+  short-lived `__Host-` cookie whose nonce is signed into the consent form and
+  stored with the state, so neither the consent POST nor the callback works
+  from another browser or a cross-site page. A Wave sign-in link for someone
+  else's flow cannot hand their client a grant. Pages also refuse framing, so
+  the approving click cannot be steered from another site.
 
 ## Verifying a deployment
 
@@ -136,14 +142,14 @@ curl -s -o /dev/null -w "%{http_code}\n" https://wave.amesvt.com/mcp
 
 # 2. Security headers are present.
 curl -s -D - -o /dev/null https://wave.amesvt.com/ \
-  | grep -i "strict-transport\|referrer-policy\|x-content-type"
+  | grep -i "strict-transport\|referrer-policy\|x-content-type\|x-frame-options"
 
 # 3. The Origin gate rejects a hostile browser origin.
 curl -s -o /dev/null -w "%{http_code}\n" \
   -H "Origin: https://evil.example.com" https://wave.amesvt.com/mcp
 ```
 
-Expect `401`, three headers, and `403`.
+Expect `401`, four headers, and `403`.
 
 Those probes prove the Worker is up, not that the new code is in it. Two
 things can mislead you here, both seen on 2026-09-02:
