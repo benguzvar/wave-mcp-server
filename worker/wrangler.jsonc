@@ -1,16 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "wave-mcp-connector",
+  "name": "sagrav-wave-mcp",
   "main": "src/index.js",
   // The public custom domain below is the only supported endpoint.
-  "workers_dev": false,
+  "workers_dev": true,
   "compatibility_date": "2025-03-10",
   // nodejs_compat lets the Worker import the shared server factory from the
   // repo root, which is written for Node.
   "compatibility_flags": ["nodejs_compat"],
   // Custom domain on the amesvt.com zone: Cloudflare creates the DNS record
   // and certificate automatically at deploy time.
-  "routes": [{ "pattern": "wave.amesvt.com", "custom_domain": true }],
+  
   "kv_namespaces": [
     // OAuthProvider grant/client/token storage (props encrypted, tokens
     // hashed), plus this connector's encrypted Wave token records.
@@ -19,7 +19,7 @@
     // namespace is titled WAVE_OAUTH_KV so it stays distinct from the YNAB
     // connector's, which already owns the plain "OAUTH_KV" title. Sharing one
     // namespace would mix the two connectors' grants.
-    { "binding": "OAUTH_KV", "id": "0a32afc8956846c49e7bacdef075dd15" }
+    { "binding": "OAUTH_KV", "id": "a98fc83545774ff78e375388c89a3d5e" }
   ],
   "durable_objects": {
     "bindings": [
@@ -33,7 +33,7 @@
     { "tag": "v2", "new_sqlite_classes": ["OAuthTransientState"] }
   ],
   "vars": {
-    "CONNECTOR_BASE_URL": "https://wave.amesvt.com",
+    "CONNECTOR_BASE_URL": "https://sagrav-wave-mcp.benny-a13.workers.dev",
     // Explicit browser origins allowed to call the MCP transport. Native and
     // server-to-server clients omit Origin and remain supported.
     "MCP_ALLOWED_ORIGINS": "https://chatgpt.com,https://claude.ai,https://chat.mistral.ai,https://lechat.mistral.ai",
