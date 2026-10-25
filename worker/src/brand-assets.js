@@ -8,7 +8,7 @@ import {
 export * from "./connector-icon-assets.js";
 
 export const CONNECTOR_NAME = "Wave Accounting";
-export const CONNECTOR_ORIGIN = "https://wave.amesvt.com";
+export const CONNECTOR_ORIGIN = "https://sagrav-wave-mcp.benny-a13.workers.dev";
 export const CONNECTOR_ICON_URL = `${CONNECTOR_ORIGIN}/assets/wave-icon-v1.png`;
 
 export const REMOTE_SERVER_INFO = {
